@@ -1,0 +1,7 @@
+# ninja log v5
+1	21998	1696515755936943057	/scratch/f006dg0/mcas-gmra/pymm-gmra/build/temp.linux-x86_64-cpython-311/scratch/f006dg0/mcas-gmra/pymm-gmra/csrc/src/dyadictree.o	582520b857a388ce
+1	23845	1696515757784953579	/scratch/f006dg0/mcas-gmra/pymm-gmra/build/temp.linux-x86_64-cpython-311/scratch/f006dg0/mcas-gmra/pymm-gmra/csrc/src/covertree.o	2145d5ca3bfb0acb
+0	24345	1696515758284956426	/scratch/f006dg0/mcas-gmra/pymm-gmra/build/temp.linux-x86_64-cpython-311/scratch/f006dg0/mcas-gmra/pymm-gmra/csrc/pybind/pybind_trees.o	975bd443987c41be
+16	87338	1701131169509912229	/scratch/f006dg0/mcas-gmra/pymm-gmra/build/temp.linux-x86_64-cpython-311/scratch/f006dg0/mcas-gmra/pymm-gmra/csrc/src/dyadictree.o	c53a993994eb319d
+16	89331	1701131171501921741	/scratch/f006dg0/mcas-gmra/pymm-gmra/build/temp.linux-x86_64-cpython-311/scratch/f006dg0/mcas-gmra/pymm-gmra/csrc/src/covertree.o	388e790b4ed3d9fe
+15	89947	1701131172121924703	/scratch/f006dg0/mcas-gmra/pymm-gmra/build/temp.linux-x86_64-cpython-311/scratch/f006dg0/mcas-gmra/pymm-gmra/csrc/pybind/pybind_trees.o	e08042767a4aa225

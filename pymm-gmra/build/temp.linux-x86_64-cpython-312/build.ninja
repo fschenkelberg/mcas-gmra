@@ -1,0 +1,26 @@
+ninja_required_version = 1.3
+cxx = c++
+
+cflags = -pthread -B /scratch/f006dg0/miniconda3/envs/mcas-gmra/compiler_compat -fno-strict-overflow -DNDEBUG -O2 -Wall -fPIC -O2 -isystem /scratch/f006dg0/miniconda3/envs/mcas-gmra/include -fPIC -O2 -isystem /scratch/f006dg0/miniconda3/envs/mcas-gmra/include -fPIC -I/scratch/f006dg0/pytorch/torch/include -I/scratch/f006dg0/pytorch/torch/include/torch/csrc/api/include -I/scratch/f006dg0/pytorch/torch/include/TH -I/scratch/f006dg0/pytorch/torch/include/THC -I/scratch/f006dg0/mcas-gmra/pymm-gmra/csrc/include -I/scratch/f006dg0/pytorch/torch/include -I/scratch/f006dg0/pytorch/torch/include/torch/csrc/api/include -I/scratch/f006dg0/pytorch/torch/include/TH -I/scratch/f006dg0/pytorch/torch/include/THC -I/scratch/f006dg0/miniconda3/envs/mcas-gmra/include/python3.12 -c
+post_cflags = -std=c++17 -DTORCH_API_INCLUDE_EXTENSION_H '-DPYBIND11_COMPILER_TYPE="_gcc"' '-DPYBIND11_STDLIB="_libstdcpp"' '-DPYBIND11_BUILD_ABI="_cxxabi1016"' -DTORCH_EXTENSION_NAME=mcas_gmra -D_GLIBCXX_USE_CXX11_ABI=1
+cuda_dlink_post_cflags = 
+ldflags = 
+
+rule compile
+  command = $cxx -MMD -MF $out.d $cflags -c $in -o $out $post_cflags
+  depfile = $out.d
+  deps = gcc
+
+
+
+
+
+build /scratch/f006dg0/mcas-gmra/pymm-gmra/build/temp.linux-x86_64-cpython-312/scratch/f006dg0/mcas-gmra/pymm-gmra/csrc/pybind/pybind_trees.o: compile /scratch/f006dg0/mcas-gmra/pymm-gmra/csrc/pybind/pybind_trees.cc
+build /scratch/f006dg0/mcas-gmra/pymm-gmra/build/temp.linux-x86_64-cpython-312/scratch/f006dg0/mcas-gmra/pymm-gmra/csrc/src/covertree.o: compile /scratch/f006dg0/mcas-gmra/pymm-gmra/csrc/src/covertree.cc
+build /scratch/f006dg0/mcas-gmra/pymm-gmra/build/temp.linux-x86_64-cpython-312/scratch/f006dg0/mcas-gmra/pymm-gmra/csrc/src/dyadictree.o: compile /scratch/f006dg0/mcas-gmra/pymm-gmra/csrc/src/dyadictree.cc
+
+
+
+
+
+
