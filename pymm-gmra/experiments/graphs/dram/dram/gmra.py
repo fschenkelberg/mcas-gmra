@@ -30,6 +30,9 @@ from pysrc.trees.wavelettree import WaveletTree
 # one of the nodes at that level, you need to traverse down to that depth and then go through each node one at a time. 
 # If you want to get more than a single point you just have to aggregate across nodes. 
 # Be warned: the dimensionality at one node at depth d might be different than another node also at depth d!
+
+
+#TODO: these functions have been moved to pysrc.utils.utils, should import from there instead
 def get_nodes_at_depth(node, depth):
     #Return a list of all nodes at depth in tree
     #subroutine to best_depth, start by passing in root node and depth you want
