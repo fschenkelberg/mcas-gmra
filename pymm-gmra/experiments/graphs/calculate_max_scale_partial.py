@@ -67,8 +67,6 @@ def calculate_max_scale(dataset, num_samples=10000):
 
     return max_scale
 
-import torch as pt
-
 def read_data(file_path):
     # Initialize an empty list to store the data
     data_list = []
@@ -84,8 +82,9 @@ def read_data(file_path):
             float_values = [float(entry) for entry in entries[1:]]
             data_list.append(float_values)
 
+    # To resolve error ValueError: A 2-dimensional array must be passed. Change expected value (ie 32,64,128,256)
     # Added to filter out any values that are not of the same length [Expected: 256]
-    data_list = [data for data in data_list if len(data) == 256]
+    data_list = [data for data in data_list if len(data) == 64]
     # Convert the list of lists to a PyTorch tensor
     tensor_data = pt.tensor(data_list)
 

@@ -1,4 +1,5 @@
-# Note: Plot embedding in matplotlab
+# Node2Vec
+# python ./graphs/dram/gmra.py ./graphs/results/theia_test_256.json --data_file /thayerfs/home/f006dg0/theia_test_256.txt
 # SYSTEM IMPORTS
 from typing import Set
 from tqdm import tqdm
@@ -8,22 +9,17 @@ import os
 import sys
 import torch as pt
 import time
+import pickle as pk
 
 _cd_: str = os.path.abspath(os.path.dirname(__file__))
 for _dir_ in [_cd_, os.path.abspath(os.path.join(_cd_, "..", "..", ".."))]:
     if _dir_ not in sys.path:
         sys.path.append(_dir_)
 del _cd_
-print(sys.path)
 
 # PYTHON PROJECT IMPORTS
 from mcas_gmra import CoverTree, DyadicTree
 from pysrc.trees.wavelettree import WaveletTree
-
-# Simple Helix Shape
-def helix():
-    # Load points from 'helix.txt'
-    return np.loadtxt('./helix/helix.txt', delimiter=',')
 
 # The low-dimensional features for each point at an arbitrary scale (i.e. 0) are stored inside the wavelet nodes themselves. 
 # When you want to extract the features for points in the dataset at a known scale, you need to traverse the tree to the 
@@ -44,33 +40,32 @@ def get_nodes_at_depth(node, depth):
         result+=get_nodes_at_depth(child,depth-1)
     return result
 
-def best_depth(node):
+def best_depth(tree):
     #Find the list of WaveletNodes that exist at the deepest level where all nodes have the same dimension
     #TODO: What happens if node.basis is empty, does this work still?
     depth_counter = 1
     #root will satisfy best depth parameters since all nodes are present in root
-    best_nodes = [node]
-    best_dim = node.basis.shape[1]
+    best_nodes = [tree]
+    best_dim = tree.basis.shape[1]
     while True:
-        nodes = get_nodes_at_depth(node, depth_counter)
+        nodes = get_nodes_at_depth(tree,depth_counter)
 
         #check if this set is "good" - all nodes have the same dimension
-        dims = {x.basis.shape[1] for x in nodes}
+        dims = list({node.basis.shape[1] for node in nodes})
 
         num_dims = len(dims)
 
-        dim = dims.pop()
-
         #if num_dims is 1, then all nodes have the same dimension (good). need to make sure its not 0
-        if num_dims == 1 and not dim == 0:
+        if num_dims == 1 and not dims[0] == 0:
             best_nodes = nodes
-            best_dim = dim
+            best_dim = dims[0]
         else:
             #if this is a bad depth, the previous depth was BEST. return those nodes
+            # print(depth_counter)
             return best_nodes, best_dim
         depth_counter += 1
 
-def get_embeddings(tree):
+def get_embeddings(tree, X):
     #returns the embeddings matrix and the idxs map
     nodes, dim = best_depth(tree.root)
 
@@ -84,14 +79,62 @@ def get_embeddings(tree):
     #expect: basis nxd where n is 1000 (num nodes) and d is the best dim
     #idxs is a column vector of length 1000 (node idxs corresponding to the elements in the basis)
     #sigmas is a column vector of length 1000 (scaling factors for each basis vector)
-    embeddings = np.multiply(basis, sigmas.reshape((basis.shape[0],1)))
-
-    #we need to reorder embeddings based on sigmas
-    reordered_embs = np.zeros(embeddings.shape)
+    try:
+        embeddings = np.multiply(basis, sigmas.reshape((basis.shape[0],1)))
+    except:
+        embeddings = basis
+    # we need to reorder embeddings based on sigmas 
+    reordered_embs = np.zeros((X.shape[0],embeddings.shape[1]))
     for idx in range(len(idxs)):
         new_idx = idxs[idx]
         reordered_embs[new_idx] = embeddings[idx]
     return reordered_embs
+
+def create_filename(data_file):
+    # Extract the base filename from the provided path
+    base_filename = os.path.basename(data_file)
+
+    # Remove the extension from the base filename
+    root, _ = os.path.splitext(base_filename)
+
+    # Create the new filename with the ".json" extension
+    filename = f"{root}_dram.txt"
+
+    return filename
+
+# Read Data
+def read_data(file_path):
+    # Initialize an empty dictionary to store the data
+    data_dict = {}
+
+    # Open the file and read its contents
+    with open(file_path, 'r') as file:
+        # Iterate through each line in the file
+        for line in file:
+            # Split the line into entries using space as the delimiter
+            entries = line.strip().split(' ')
+            
+            # Extract id from the line
+            id = str(entries[0])
+
+            # Skip the first entry (identifier) and convert subsequent entries to float
+            float_values = [float(entry) for entry in entries[1:]]
+
+            # Check if the set of float_values already exists in the dictionary
+            if id not in data_dict or set(float_values) != set(data_dict[id]):
+                # Add the id and corresponding values to the dictionary
+                data_dict[id] = float_values
+
+    # Filter out any values that are not of the same length [Expected: 256]
+    data_dict = {k: v for k, v in data_dict.items() if len(v) == 256}
+
+    # Convert the dictionary values to a PyTorch tensor
+    values = pt.tensor(list(data_dict.values()))
+
+    # Converted to a list to make it subscribable
+    keys = list(data_dict.keys())
+
+    return keys, values
 
 def main() -> None:
     init_time = time.time()
@@ -99,16 +142,13 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("covertree_path", type=str,
                         help="path to serialized json file")
+    parser.add_argument("--data_file", type=str,
+                        help="path to the data file")
     args = parser.parse_args()
 
     print("loading data")
     start_time = time.time()
-    # Generate the helix dataset using the helix function
-    X = helix() # Using 10,000 pts here imported from the helix.txt file
-    X = pt.from_numpy(X.astype(np.float32))
-    # Print the 3D points
-    print("First 15 3D Points:")
-    print(X[:15, :])
+    ids, X = read_data(args.data_file)
     end_time = time.time()
     print("done. took {0:.4f} seconds".format(end_time-start_time))
 
@@ -135,26 +175,25 @@ def main() -> None:
     print("done. took {0:.4f} seconds".format(end_time-start_time))
     print("took script {0:.4f} seconds to run".format(end_time-init_time))
 
-    # Set the desired scale to 0 (the roughest scale)
-    desired_scale = 0
-
-    print("Extracting low-dimensional embeddings at scale {0}".format(desired_scale))
+    print("Extracting low-dimensional embeddings")
     start_time = time.time()
-    embeddings = get_embeddings(wavelet_tree)
+    embeddings = get_embeddings(wavelet_tree, X)
     end_time = time.time()
     print("done. took {0:.4f} seconds".format(end_time - start_time))
 
     # Output the embeddings to a text file
-    output_dir = "./helix/results"
-    output_path = os.path.join(output_dir, "dram.txt")
+    output_dir = "./SNAP/reduced_embeddings/32"
+    # CHANGE OUTPUT FILE NAME!!
+    output_path = os.path.join(output_dir, create_filename(args.data_file))
 
     # Create the directory if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
 
     # Open the file in 'w' mode (write mode)
     with open(output_path, 'w') as file:
-        for embedding in embeddings:
-            file.write(" ".join(map(str, embedding)) + "\n")
+        for i, embedding in enumerate(embeddings):
+            # Write the original ID followed by the embedding values
+            file.write(f"{ids[i]} {' '.join(map(str, embedding))}\n")
 
     print("Low-dimensional embeddings saved to {0}".format(output_path))
 

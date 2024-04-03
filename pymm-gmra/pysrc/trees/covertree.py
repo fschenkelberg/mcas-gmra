@@ -4,15 +4,11 @@ from itertools import product
 from collections import Counter
 from heapq import nsmallest
 from random import choice
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Set, Tuple, Union
 import numpy as np
 
-
 # PYTHON PROJECT IMPORTS
-
-
 CoverTreeNodeType = "CoverTreeNode"
-
 
 class CoverTreeNode(object):
     def __init__(self,
@@ -52,10 +48,8 @@ class CoverTreeNode(object):
 
         return self
 
-
 def unique(c) -> bool:
     return Counter(c).get(True, 0) == 1
-
 
 class CoverTree(object):
     def __init__(self,
@@ -77,14 +71,35 @@ class CoverTree(object):
     @property
     def size(self) -> int:
         return self.num_pts
-
+    
+    """
+    # Original Insert Method
     def insert(self,
                dataset: np.ndarray) -> "CoverTree":
         self.datasets.append(dataset)
         for pt_idx in tqdm(range(dataset.shape[0])):
             self._insert(pt_idx, len(self.datasets)-1)
         return self
+    """
 
+    # Modified Insert Method
+    def insert(self,
+               dataset: Union[np.ndarray, List[np.ndarray]],
+               is_batch: bool = False) -> "CoverTree":
+        if isinstance(dataset, np.ndarray) and not is_batch:
+            self.datasets.append(dataset)
+            for pt_idx in tqdm(range(dataset.shape[0])):
+                self._insert(pt_idx, len(self.datasets) - 1)
+        elif isinstance(dataset, list) and is_batch:
+            for batch_idx, batch in enumerate(dataset):
+                self.datasets.append(batch)
+                for pt_idx in tqdm(range(batch.shape[0]), desc=f"Inserting batch {batch_idx}"):
+                    self._insert(pt_idx, len(self.datasets) - 1)
+        else:
+            raise ValueError("Invalid input. 'dataset' should be either a numpy array or a list of numpy arrays.")
+
+        return self
+    
     def _insert(self,
                 pt_idx: int,
                 dataset_idx: int) -> None:
@@ -186,4 +201,3 @@ class CoverTree(object):
                 raise ValueError("ERROR at scale %s, separation fails" % scale)
 
             C = C_next
-

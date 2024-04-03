@@ -45,7 +45,7 @@ def read_data(file_path):
             data_list.append(float_values)
 
     # Added to filter out any values that are not of the same length [Expected: 256]
-    data_list = [data for data in data_list if len(data) == 256]
+    data_list = [data for data in data_list if len(data) == 128]
     # Convert the list of lists to a PyTorch tensor
     tensor_data = pt.tensor(data_list)
 
@@ -59,6 +59,8 @@ def main() -> None:
                         help="if enabled, perform an expensive tree validate operation")
     parser.add_argument("--data_file", type=str, 
                         help="path to the data file")
+    parser.add_argument("--max_scale", type=int, 
+                        help="calculated max_scale for the given data file")
     args = parser.parse_args()
 
     if not os.path.exists(args.data_dir):
@@ -68,7 +70,7 @@ def main() -> None:
     X_pt = read_data(args.data_file)
     print("done")
 
-    cover_tree = CoverTree(max_scale=8)
+    cover_tree = CoverTree(max_scale=args.max_scale)
 
     for pt_idx in tqdm(list(range(X_pt.shape[0])),
                        desc="building covertree"):

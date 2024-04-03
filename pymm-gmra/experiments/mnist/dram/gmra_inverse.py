@@ -18,14 +18,12 @@ for _dir_ in [_cd_, os.path.abspath(os.path.join(_cd_, "..", "..", ".."))]:
     if _dir_ not in sys.path:
         sys.path.append(_dir_)
 del _cd_
-print(sys.path)
 
 # PYTHON PROJECT IMPORTS
 from mcas_gmra import CoverTree, DyadicTree
 from pysrc.trees.wavelettree import WaveletTree
 from pysrc.utils.utils import *
 from pysrc.utils.inverse import *
-
 
 def main() -> None:
     init_time = time.time()

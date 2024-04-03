@@ -4,10 +4,27 @@ import torch as pt
 
 #This file contains util helper functions that aid in traversing trees, gaining info from trees, and operations over trees
 
+def check_wav_vars(root):
+	if root.is_leaf:
+		return {'wav_basis':0, 'wav_consts':0, 'wav_sigmas': 0}
+	total = {'wav_basis':0, 'wav_consts':0, 'wav_sigmas': 0}
+	for child in root.children:
+		res = check_wav_vars(child)
+		total['wav_basis'] += res['wav_basis']
+		total['wav_sigmas'] += res['wav_sigmas']
+		total['wav_consts'] += res['wav_consts']
+	if not root.wav_basis is None:
+		total['wav_basis'] +=1
+	if not root.wav_sigmas is None:
+		total['wav_sigmas'] +=1
+	if not root.wav_consts is None:
+		total['wav_consts'] +=1
+	return total
+
 
 # Given a tree structure root node, return a list of the leaf nodes in the tree
 def get_leafs(node):
-    if node.is_leaf:
+    if len(node.idxs) == 1:
         return [node]
     leafs = []
     for child in node.children:

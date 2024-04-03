@@ -1,16 +1,21 @@
 from pysrc.utils.utils import *
 import numpy as np
+import numpy.matlib
 
 #This file contains functions for computing the inverse of a tree
 
 # Transcription of FGWT from matlab. We need this to compute CelWavCoeffs for the inverse
+# Line number comments refer to the line number in the original FGWT function
 def fgwt(wavelet_tree, X):
+    X = X.T
+    print(X.shape)
     J_max = depth(wavelet_tree.root) #max scales not depth
     leafs = get_leafs(wavelet_tree.root)
-    CelWavCoeffs = np.zeros((X.shape[0],J_max)) 
-    CelScalCoeffs = np.zeros((X.shape[0],J_max))
-
-    for leaf in leafs: #TODO
+    CelWavCoeffs = [[None]*(J_max+1) for i in range(X.shape[1])] #np.zeros((X.shape[0],J_max+1)) 
+    CelScalCoeffs = [[None]*(J_max+1) for i in range(X.shape[1])] #np.zeros((X.shape[0],J_max+1))
+    CelTangCoeffs = [[None]*(J_max+1) for i in range(X.shape[1])]
+    
+    for leaf in leafs:
         #the index of the single point in this leaf
         curIdx = leaf.idxs[0]
         #the indices at the parent of the leaf
@@ -19,34 +24,43 @@ def fgwt(wavelet_tree, X):
         iCoarseNet = iFineNet.parent
         pt_idxs = leaf.idxs
         j = level(leaf)
-        # if j==1:
-        #     CelWavCoeffs[curIdx - 1][0] = leaf.parent.wav_basis.dot(X[:, pt_idxs] - leaf.parent.center)
-        #     CelScalCoeffs[curIdx - 1][0] = CelWavCoeffs[curIdx - 1][0]
-        Projections_jmax = X[pt_idxs]
+        print(j)
+
+        #If this is the root
+        if j==1: # Line 136
+            CelWavCoeffs[curIdx][j] = leaf.wav_basis.dot(X[:, pt_idxs] - leaf.center)
+            CelScalCoeffs[curIdx][j] = CelWavCoeffs[curIdx][1]
+        else: # Line 142
+            CelScalCoeffs[curIdx][j] = iFineNet.basis.dot(X[:,pt_idxs]- iFineNet.center)
+            
+            Projections_jmax = X[:,pt_idxs]
         
-        if leaf.wav_basis is not None:
-            CelScalCoeffs[j] = leaf.wav_basis.dot(X[:, pt_idxs] - leaf.center)
-            CelWavCoeffs[curIdx][j] = ComputeWaveletCoeffcients(
-                CelScalCoeffs[curIdx][j],
-                leaf.basis,
-                leaf.wav_basis)
-        for node in reversed(p[:-1]):
-            j= level(node)
-            iFinerNet= iFineNet
-            iFineNet = iCoarseNet
-            iCoarseNet = iFineNet.parent
-            #TODO: what is ScalBasisChange?
-            if node.wav_basis is not None:
-                CelScalCoeffs[curIdx][j] = (
-                            iFineNet.wav_basis.dot(iFinerNet.center - iFineNet.center))
-            if j==1 or iCoarseNet.parent is None:
+            if iFineNet.wav_basis is not None: # Line 151
+                # CelScalCoeffs[curIdx][j] = leaf.wav_basis.dot(X[:, pt_idxs] - leaf.center)
+                CelWavCoeffs[curIdx][j] = ComputeWaveletCoeffcients(
+                    CelScalCoeffs[curIdx][j],
+                    iFineNet.basis,
+                    iFineNet.wav_basis)
+            CelTangCoeffs[curIdx][j] = np.zeros((iCoarseNet.basis.shape[0],len(leaf.idxs)))
+
+        for node in reversed(p[:-1]): # Line 179
+            j = level(node)
+            print(j)
+            iFinerNet = iFineNet
+            iFineNet = node
+            iCoarseNet = node.parent
+            #TODO: what is ScalBasisChange? Also CelTangCoeffs
+            if node.basis is not None: # Line 199
+                CelScalCoeffs[curIdx][j] = numpy.matlib.repmat( 
+                    iFineNet.basis.dot(iFinerNet.center - iFineNet.center),1,len(iFinerNet.idxs))
+            if j==1 or iCoarseNet.parent is None: # Line 203
                 break
-            if iFineNet.parent.wav_basis is not None and CelScalCoeffs[curIdx][j] is not None:
+            if iFineNet.wav_basis is not None and CelScalCoeffs[curIdx][j] is not None: # Line 205
                 CelWavCoeffs[curIdx][j] = ComputeWaveletCoeffcients(
                             CelScalCoeffs[curIdx][j],
                             iFineNet.basis,
                             iFineNet.wav_basis)
-            CelWavCoeffs[curIdx][0] = CelScalCoeffs[curIdx][0]
+            CelWavCoeffs[curIdx][1] = CelScalCoeffs[curIdx][1]
 
     return CelWavCoeffs
 
@@ -54,6 +68,7 @@ def fgwt(wavelet_tree, X):
 
 #A Helper function for fgwt
 def ComputeWaveletCoeffcients(data_coeffs, scalBases, wavBases):
+    print(wavBases.shape, scalBases.T.shape, data_coeffs.shape)
     wavCoeffs = wavBases.dot((scalBases.T.dot(data_coeffs)))
 
     return wavCoeffs
@@ -89,6 +104,12 @@ def reconstruct_X(tree, X, CelWavCoeffs):
 def invert(wavelet_tree, X):
     #This populates wav_basis and centers variables within the tree
     wavelet_tree.make_wavelets(X)
+
+    #check counts of populated wav vars
+    # print(check_wav_vars(wavelet_tree.root))
+    # print(wavelet_tree.num_nodes)
+    # print(len(get_leafs(wavelet_tree.root)))
+
     #This computes CelWavCoeffs
     CelWavcoeffs = fgwt(wavelet_tree, X)
     #Taking the actual inverse after we have all prereq computations

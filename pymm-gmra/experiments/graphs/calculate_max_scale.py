@@ -5,6 +5,7 @@ from scipy.spatial.distance import pdist
 import math
 import pickle as pk
 import os
+import torch as pt
 
 def filename(data_file):
     # Extract the base filename from the provided path
@@ -59,6 +60,28 @@ def calculate_max_scale(dataset):
 
     return max_scale
 
+def read_data(file_path):
+    # Initialize an empty list to store the data
+    data_list = []
+
+    # Open the file and read its contents
+    with open(file_path, 'r') as file:
+        # Iterate through each line in the file
+        for line in file:
+            # Split the line into entries using space as the delimiter
+            entries = line.strip().split(' ')
+            
+            # Skip the first entry (identifier) and convert subsequent entries to float
+            float_values = [float(entry) for entry in entries[1:]]
+            data_list.append(float_values)
+
+    # Added to filter out any values that are not of the same length [Expected: 256]
+    data_list = [data for data in data_list if len(data) == 64]
+    # Convert the list of lists to a PyTorch tensor
+    tensor_data = pt.tensor(data_list)
+
+    return tensor_data
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_file", type=str,
@@ -66,9 +89,10 @@ def main() -> None:
     args = parser.parse_args()
 
     print("loading data")
-    X = pk.load(open(args.data_file, "rb"))
+    # X = pk.load(open(args.data_file, "rb"))
     # X_pt = X[:int(.1*len(X))].detach()
-    X_pt = X.detach()
+    # X_pt = X.detach()
+    X_pt = read_data(args.data_file)
     print("done")
 
     max_scale = calculate_max_scale(X_pt)

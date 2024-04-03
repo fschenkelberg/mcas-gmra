@@ -187,28 +187,22 @@ class WaveletNode(object):
                        precision: float = 1e-2) -> None:
         parent_basis: np.ndarray = self.basis
 
-        # print(self.idxs.shape, self.basis.shape)
+        print(self.idxs.shape, self.basis.shape)
         if np.prod(parent_basis.shape) > 0:
             wav_dims: np.ndarray = np.zeros(len(self.children))
             for i,c in enumerate(self.children):
                 if np.prod(c.basis.shape) > 0:
-                    Y = None
-                    try:
-                        Y: np.ndarray = c.basis-(c.basis.dot(parent_basis.T)).dot(parent_basis)
-                        _, s, V = rand_pca(Y, min(min(Y.shape), max_dim))
-                    except:
-                        pass
-                    if Y is not None:
+                    Y: np.ndarray = c.basis-(c.basis.dot(parent_basis.T)).dot(parent_basis)
+                    _, s, V = rand_pca(Y, min(min(Y.shape), max_dim))
 
-                        wav_dims[i] = (s > threshold).sum()
+                    wav_dims[i] = (s > threshold).sum()
+                    if wav_dims[i] > 0:
+                        self.wav_basis = V[:,:wav_dims[i]].T
+                        self.wav_sigmas = s[:wav_dims[i]]
 
-                        if wav_dims[i] > 0:
-                            self.wav_basis = V[:,:wav_dims[i]].T
-                            self.wav_sigmas = s[:wav_dims[i]]
-
-                        self.wav_consts = c.center - self.center
-
-                        self.wav_consts = self.wav_consts - parent_basis.T.dot(parent_basis*self.wav_consts)
+                    self.wav_consts = c.center - self.center
+                    self.wav_consts = self.wav_consts -\
+                        parent_basis.T.dot(parent_basis*self.wav_consts)
 
 
 class WaveletTree(object):
@@ -285,7 +279,7 @@ class WaveletTree(object):
         for level in range(1, self.num_levels):
             next_layer = list()
             for node in current_layer:
-                # print("level %s: basis.shape: %s" % (level, node.basis.shape))
+                print("level %s: basis.shape: %s" % (level, node.basis.shape))
                 for child in node.children:
                     next_layer.append(child)
 
@@ -295,7 +289,7 @@ class WaveletTree(object):
         for j in range(self.num_levels-1, 0, -1):
             # built transforms
             nodes = nodes_at_layers[j]
-            # print("layer %s" % j)
+            print("layer %s" % j)
             for node in nodes:
                 node.make_transform(X, self.manifold_dims[j], self.max_dim,
                                     self.shelf, self.thresholds[j], self.precisions[j])

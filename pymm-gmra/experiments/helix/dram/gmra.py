@@ -20,10 +20,30 @@ print(sys.path)
 from mcas_gmra import CoverTree, DyadicTree
 from pysrc.trees.wavelettree import WaveletTree
 
-# Simple Helix Shape
-def helix():
-    # Load points from 'helix.txt'
-    return np.loadtxt('./helix/helix.txt', delimiter=',')
+# Read Provenance Graph
+def read_data(file_path):
+    # Initialize an empty list to store the data
+    data_list = []
+
+    # Open the file and read its contents
+    with open(file_path, 'r') as file:
+        # Iterate through each line in the file
+        for line in file:
+            # Split the line into three values using a comma as the delimiter
+            values = line.strip().split(' ')
+            
+            # Convert each value to a float and append to the list
+            # Modified for the graphs
+            # float_values = [float(val) for val in values]
+            float_values = [float(val) for val in values[1:]]
+            data_list.append(float_values)
+
+    # Added to filter out any values that are not of the same length [Expected: 32]
+    data_list = [data for data in data_list if len(data) == 32]
+    # Convert the list of lists to a PyTorch tensor
+    tensor_data = pt.tensor(data_list)
+
+    return tensor_data
 
 # The low-dimensional features for each point at an arbitrary scale (i.e. 0) are stored inside the wavelet nodes themselves. 
 # When you want to extract the features for points in the dataset at a known scale, you need to traverse the tree to the 
@@ -51,6 +71,7 @@ def best_depth(node):
     #root will satisfy best depth parameters since all nodes are present in root
     best_nodes = [node]
     best_dim = node.basis.shape[1]
+
     while True:
         nodes = get_nodes_at_depth(node, depth_counter)
 
@@ -67,24 +88,27 @@ def best_depth(node):
             best_dim = dim
         else:
             #if this is a bad depth, the previous depth was BEST. return those nodes
-            return best_nodes, best_dim
+            return best_nodes, best_dim, depth_counter
         depth_counter += 1
 
 def get_embeddings(tree):
     #returns the embeddings matrix and the idxs map
-    nodes, dim = best_depth(tree.root)
+    nodes, dim, depth = best_depth(tree.root)
 
     #aggregate nodes along depth
     #need basis, idxs, and sigmas
     basis = np.vstack([node.basis for node in nodes])
     idxs = np.hstack([node.idxs for node in nodes])
-    sigmas = np.hstack([node.sigmas[:-1] for node in nodes])
+    # sigmas = np.hstack([node.sigmas[:-1] for node in nodes])
 
     #TODO check dimensions of basis, idxs, sigmas
     #expect: basis nxd where n is 1000 (num nodes) and d is the best dim
     #idxs is a column vector of length 1000 (node idxs corresponding to the elements in the basis)
     #sigmas is a column vector of length 1000 (scaling factors for each basis vector)
-    embeddings = np.multiply(basis, sigmas.reshape((basis.shape[0],1)))
+    # embeddings = np.multiply(basis, sigmas.reshape((basis.shape[0],1)))
+
+    # Scaling?
+    embeddings = basis
 
     #we need to reorder embeddings based on sigmas
     reordered_embs = np.zeros(embeddings.shape)
@@ -93,22 +117,35 @@ def get_embeddings(tree):
         reordered_embs[new_idx] = embeddings[idx]
     return reordered_embs
 
+def image(tree):
+    # Highest Level
+    x = get_nodes_at_depth(tree.root, 5)
+
+    y = get_nodes_at_depth(tree.root, 4)
+
+    # Scale where all the same dim
+    # Don't 
+
+    print(len(x), len(y))
+
+    print(x[0].basis.shape, y[0].basis.shape)
+
+
 def main() -> None:
     init_time = time.time()
 
     parser = argparse.ArgumentParser()
     parser.add_argument("covertree_path", type=str,
                         help="path to serialized json file")
+    parser.add_argument("--data_file", type=str, default="/scratch/f006dg0/mcas-gmra/pymm-gmra/experiments/graphs/n2v/theia_test_32.txt", 
+                        help="path to the data file")
     args = parser.parse_args()
 
     print("loading data")
     start_time = time.time()
-    # Generate the helix dataset using the helix function
-    X = helix() # Using 10,000 pts here imported from the helix.txt file
-    X = pt.from_numpy(X.astype(np.float32))
-    # Print the 3D points
-    print("First 15 3D Points:")
-    print(X[:15, :])
+    # Generate the graph dataset using the graph argument
+    X = read_data(args.data_file)
+    # X = pt.from_numpy(X.astype(np.float32))
     end_time = time.time()
     print("done. took {0:.4f} seconds".format(end_time-start_time))
 
@@ -140,12 +177,13 @@ def main() -> None:
 
     print("Extracting low-dimensional embeddings at scale {0}".format(desired_scale))
     start_time = time.time()
-    embeddings = get_embeddings(wavelet_tree)
+    embeddings = image(wavelet_tree)
     end_time = time.time()
     print("done. took {0:.4f} seconds".format(end_time - start_time))
 
     # Output the embeddings to a text file
     output_dir = "./helix/results"
+    # CHANGE OUTPUT FILE NAME!!
     output_path = os.path.join(output_dir, "dram.txt")
 
     # Create the directory if it doesn't exist

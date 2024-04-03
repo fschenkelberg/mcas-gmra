@@ -1,0 +1,421 @@
+{
+	min_scale:	-4,
+	max_scale:	2,
+	base:	2,
+	num_nodes:	66,
+	root:	0,
+	nodes:	 [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65],
+	adjacency:	{
+		0:	{
+			is_root:	1,
+			parent:	-1,
+			scale_map: {
+				1:	[1]
+			}
+		},
+		1:	{
+			is_root:	0,
+			parent:	0,
+			scale_map: {
+				0:	[2]
+			}
+		},
+		2:	{
+			is_root:	0,
+			parent:	1,
+			scale_map: {
+				-2:	[58, 53, 52, 49, 5, 39, 6, 11, 21, 33, 24, 36, 48, 14, 25, 23, 31],
+				-1:	[4, 9, 3]
+			}
+		},
+		3:	{
+			is_root:	0,
+			parent:	2,
+			scale_map: {
+				-2:	[47, 43, 29, 12, 45, 10, 7]
+			}
+		},
+		4:	{
+			is_root:	0,
+			parent:	2,
+			scale_map: {
+				-2:	[59, 27, 15, 8]
+			}
+		},
+		5:	{
+			is_root:	0,
+			parent:	2,
+			scale_map: {
+			}
+		},
+		6:	{
+			is_root:	0,
+			parent:	2,
+			scale_map: {
+			}
+		},
+		7:	{
+			is_root:	0,
+			parent:	3,
+			scale_map: {
+			}
+		},
+		8:	{
+			is_root:	0,
+			parent:	4,
+			scale_map: {
+			}
+		},
+		9:	{
+			is_root:	0,
+			parent:	2,
+			scale_map: {
+				-2:	[63, 60, 56, 55, 16, 20, 34, 40, 17, 42, 62, 18, 35, 54, 37, 13, 38, 44]
+			}
+		},
+		10:	{
+			is_root:	0,
+			parent:	3,
+			scale_map: {
+			}
+		},
+		11:	{
+			is_root:	0,
+			parent:	2,
+			scale_map: {
+			}
+		},
+		12:	{
+			is_root:	0,
+			parent:	3,
+			scale_map: {
+				-3:	[32, 28, 30, 22, 19]
+			}
+		},
+		13:	{
+			is_root:	0,
+			parent:	9,
+			scale_map: {
+			}
+		},
+		14:	{
+			is_root:	0,
+			parent:	2,
+			scale_map: {
+			}
+		},
+		15:	{
+			is_root:	0,
+			parent:	4,
+			scale_map: {
+			}
+		},
+		16:	{
+			is_root:	0,
+			parent:	9,
+			scale_map: {
+			}
+		},
+		17:	{
+			is_root:	0,
+			parent:	9,
+			scale_map: {
+				-3:	[51]
+			}
+		},
+		18:	{
+			is_root:	0,
+			parent:	9,
+			scale_map: {
+			}
+		},
+		19:	{
+			is_root:	0,
+			parent:	12,
+			scale_map: {
+			}
+		},
+		20:	{
+			is_root:	0,
+			parent:	9,
+			scale_map: {
+			}
+		},
+		21:	{
+			is_root:	0,
+			parent:	2,
+			scale_map: {
+				-3:	[64]
+			}
+		},
+		22:	{
+			is_root:	0,
+			parent:	12,
+			scale_map: {
+			}
+		},
+		23:	{
+			is_root:	0,
+			parent:	2,
+			scale_map: {
+			}
+		},
+		24:	{
+			is_root:	0,
+			parent:	2,
+			scale_map: {
+				-3:	[41]
+			}
+		},
+		25:	{
+			is_root:	0,
+			parent:	2,
+			scale_map: {
+				-3:	[26]
+			}
+		},
+		26:	{
+			is_root:	0,
+			parent:	25,
+			scale_map: {
+			}
+		},
+		27:	{
+			is_root:	0,
+			parent:	4,
+			scale_map: {
+			}
+		},
+		28:	{
+			is_root:	0,
+			parent:	12,
+			scale_map: {
+			}
+		},
+		29:	{
+			is_root:	0,
+			parent:	3,
+			scale_map: {
+				-3:	[61, 50]
+			}
+		},
+		30:	{
+			is_root:	0,
+			parent:	12,
+			scale_map: {
+			}
+		},
+		31:	{
+			is_root:	0,
+			parent:	2,
+			scale_map: {
+			}
+		},
+		32:	{
+			is_root:	0,
+			parent:	12,
+			scale_map: {
+			}
+		},
+		33:	{
+			is_root:	0,
+			parent:	2,
+			scale_map: {
+			}
+		},
+		34:	{
+			is_root:	0,
+			parent:	9,
+			scale_map: {
+			}
+		},
+		35:	{
+			is_root:	0,
+			parent:	9,
+			scale_map: {
+			}
+		},
+		36:	{
+			is_root:	0,
+			parent:	2,
+			scale_map: {
+				-3:	[65]
+			}
+		},
+		37:	{
+			is_root:	0,
+			parent:	9,
+			scale_map: {
+				-3:	[57, 46]
+			}
+		},
+		38:	{
+			is_root:	0,
+			parent:	9,
+			scale_map: {
+			}
+		},
+		39:	{
+			is_root:	0,
+			parent:	2,
+			scale_map: {
+			}
+		},
+		40:	{
+			is_root:	0,
+			parent:	9,
+			scale_map: {
+			}
+		},
+		41:	{
+			is_root:	0,
+			parent:	24,
+			scale_map: {
+			}
+		},
+		42:	{
+			is_root:	0,
+			parent:	9,
+			scale_map: {
+			}
+		},
+		43:	{
+			is_root:	0,
+			parent:	3,
+			scale_map: {
+			}
+		},
+		44:	{
+			is_root:	0,
+			parent:	9,
+			scale_map: {
+			}
+		},
+		45:	{
+			is_root:	0,
+			parent:	3,
+			scale_map: {
+			}
+		},
+		46:	{
+			is_root:	0,
+			parent:	37,
+			scale_map: {
+			}
+		},
+		47:	{
+			is_root:	0,
+			parent:	3,
+			scale_map: {
+			}
+		},
+		48:	{
+			is_root:	0,
+			parent:	2,
+			scale_map: {
+			}
+		},
+		49:	{
+			is_root:	0,
+			parent:	2,
+			scale_map: {
+			}
+		},
+		50:	{
+			is_root:	0,
+			parent:	29,
+			scale_map: {
+			}
+		},
+		51:	{
+			is_root:	0,
+			parent:	17,
+			scale_map: {
+			}
+		},
+		52:	{
+			is_root:	0,
+			parent:	2,
+			scale_map: {
+			}
+		},
+		53:	{
+			is_root:	0,
+			parent:	2,
+			scale_map: {
+			}
+		},
+		54:	{
+			is_root:	0,
+			parent:	9,
+			scale_map: {
+			}
+		},
+		55:	{
+			is_root:	0,
+			parent:	9,
+			scale_map: {
+			}
+		},
+		56:	{
+			is_root:	0,
+			parent:	9,
+			scale_map: {
+			}
+		},
+		57:	{
+			is_root:	0,
+			parent:	37,
+			scale_map: {
+			}
+		},
+		58:	{
+			is_root:	0,
+			parent:	2,
+			scale_map: {
+			}
+		},
+		59:	{
+			is_root:	0,
+			parent:	4,
+			scale_map: {
+			}
+		},
+		60:	{
+			is_root:	0,
+			parent:	9,
+			scale_map: {
+			}
+		},
+		61:	{
+			is_root:	0,
+			parent:	29,
+			scale_map: {
+			}
+		},
+		62:	{
+			is_root:	0,
+			parent:	9,
+			scale_map: {
+			}
+		},
+		63:	{
+			is_root:	0,
+			parent:	9,
+			scale_map: {
+			}
+		},
+		64:	{
+			is_root:	0,
+			parent:	21,
+			scale_map: {
+			}
+		},
+		65:	{
+			is_root:	0,
+			parent:	36,
+			scale_map: {
+			}
+		}
+	}
+}

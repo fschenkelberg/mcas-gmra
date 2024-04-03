@@ -68,7 +68,7 @@ def main() -> None:
     X_pt = read_data(args.data_file)
     print("done")
 
-    cover_tree = CoverTree(max_scale=8)
+    cover_tree = CoverTree(max_scale=0)
 
     for pt_idx in tqdm(list(range(X_pt.shape[0])),
                        desc="building covertree"):
