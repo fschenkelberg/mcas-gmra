@@ -40,9 +40,6 @@ def main() -> None:
 
     print("loading data")
     start_time = time.time()
-    # (X_train, _), (X_test, _) = mnist.load_data()
-    # X: np.ndarray = np.vstack([X_train, X_test])
-    # X = X.reshape(X.shape[0], -1).astype(np.float32)
     X = helix() # Using 10,000 pts here imported from the helix.txt file
     X = pt.from_numpy(X.astype(np.float32))
     end_time = time.time()

@@ -7,7 +7,7 @@ import argparse
 import os
 import pandas as pd
 
-# Use: /usr/bin/python graph_embedding.py -file_path /thayerfs/home/f006dg0/email-Eu-core.txt
+# Use: /usr/bin/python Node2Vec.py /thayerfs/home/f006dg0/email-Eu-core.txt
 
 def read_directed_graph(file_path):
     # Read the file into a DataFrame

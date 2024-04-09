@@ -126,7 +126,7 @@ def read_data(file_path):
                 data_dict[id] = float_values
 
     # Filter out any values that are not of the same length [Expected: 256]
-    data_dict = {k: v for k, v in data_dict.items() if len(v) == 256}
+    data_dict = {k: v for k, v in data_dict.items() if len(v) == 128}
 
     # Convert the dictionary values to a PyTorch tensor
     values = pt.tensor(list(data_dict.values()))
@@ -182,7 +182,7 @@ def main() -> None:
     print("done. took {0:.4f} seconds".format(end_time - start_time))
 
     # Output the embeddings to a text file
-    output_dir = "./SNAP/reduced_embeddings/32"
+    output_dir = "./SNAP/reduced_embeddings/128"
     # CHANGE OUTPUT FILE NAME!!
     output_path = os.path.join(output_dir, create_filename(args.data_file))
 

@@ -21,9 +21,12 @@ del _cd_
 print(sys.path)
 
 # PYTHON PROJECT IMPORTS
-from mcas_gmra import CoverTree, DyadicTree
+# from mcas_gmra import DyadicTree
 from pysrc.trees.wavelettree import WaveletTree
 from pysrc.utils.utils import *
+
+from pysrc.trees.covertree import *
+from pysrc.trees.dyadiccelltree import *
 
 def read_data(file_path):
     data_dict = {}
@@ -35,7 +38,8 @@ def read_data(file_path):
             if id not in data_dict or set(float_values) != set(data_dict[id]):
                 data_dict[id] = float_values
     data_dict = {k: v for k, v in data_dict.items() if len(v) == 256}
-    values = torch.tensor(list(data_dict.values()))
+    # values = torch.tensor(list(data_dict.values()))
+    values = np.array(list(data_dict.values()))
     keys = list(data_dict.keys())
 
     return keys, values
@@ -153,10 +157,15 @@ def main() -> None:
     print("done. took {0:.4f} seconds".format(end_time-start_time))
 
     max_scale = calculate_max_scale(X_pt)
-    block_size = calculate_block_size(max_scale)
 
-    print("max_scale: " + str(max_scale))
-    print("block_size: " + str(block_size))
+    print(max_scale)
+    # block_size = calculate_block_size(max_scale)
+
+    max_scale = 6
+    block_size = 64
+
+    # print("max_scale: " + str(max_scale))
+    # print("block_size: " + str(block_size))
     print("Processing data in blocks...")
 
     num_blocks = math.ceil(len(X_pt) / block_size)
@@ -164,74 +173,58 @@ def main() -> None:
     # Load existing CoverTree or create a new one if it doesn't exist
     filename = create_json(args.data_file)
     covertree_path = os.path.join(os.path.dirname(args.data_file), filename)
-
-    if os.path.exists(covertree_path):
-        # print("loading covertree from [%s]" % covertree_path)
-        cover_tree: CoverTree = CoverTree(covertree_path)
-    else:
-        # print("creating new covertree")
-        cover_tree = CoverTree(max_scale=max_scale)
     
-    try:
-        for i in range(num_blocks):
-            block = X_pt[block_size * i: block_size * (i + 1)]
+    cover_tree = CoverTree(max_scale=20)
+    # for i in range(num_blocks):
+    for i in range(5):
 
-            # Insert the current block as a batch
-            cover_tree.insert(block, is_batch=True)
+        block = X_pt[block_size * i: block_size * (i + 1)]
+        print("***********************************************")
+        print("STARTING BLOCK")
+        print(block.shape)
 
-            # Save the updated covertree after each batch
-            print("Serializing covertree to [%s]" % covertree_path)
+        cover_tree.insert(block)
+        print("***********************************************")
 
-            cover_tree.save(covertree_path)
+        print("constructing dyadic tree")
+        start_time = time.time()
+        dyadic_tree = DyadicCellTree()
+        dyadic_tree.from_covertree(cover_tree)
+        end_time = time.time()
+        print("done. took {0:.4f} seconds".format(end_time-start_time))
 
-            if not os.path.exists(covertree_path):
-                raise ValueError("ERROR: covertree json file does not exist at [%s]"
-                            % covertree_path)
+        print("constructing wavelet tree")
+        start_time = time.time()
+        wavelet_tree = WaveletTree(dyadic_tree, X_pt[:block_size * (i + 1)], 0, block.shape[-1])
+        end_time = time.time()
+        print("done. took {0:.4f} seconds".format(end_time-start_time))
+        
+        print("Extracting low-dimensional embeddings")
+        start_time = time.time()
+        embeddings = get_embeddings(wavelet_tree, X_pt[:block_size * (i + 1)])
+        end_time = time.time()
+        print("done. took {0:.4f} seconds".format(end_time - start_time))
 
-            print("loading covertree from [%s]" % covertree_path)
-            start_time = time.time()
-            cover_tree: CoverTree = CoverTree(covertree_path)
-            end_time = time.time()
-            print("done. took {0:.4f} seconds".format(end_time-start_time))
+        # Output the embeddings to a text file
+        output_dir = "./LANL/results"
+        os.makedirs(output_dir, exist_ok=True)
 
-            print("constructing dyadic tree")
-            start_time = time.time()
-            dyadic_tree = DyadicTree(cover_tree)
-            end_time = time.time()
-            print("done. took {0:.4f} seconds".format(end_time-start_time))
+        output_path = os.path.join(output_dir, create_filename(args.data_file) + f"_{i}.txt")
 
-            print("constructing wavelet tree")
-            start_time = time.time()
-            wavelet_tree = WaveletTree(dyadic_tree, block, 0, block.shape[-1])
-            end_time = time.time()
-            print("done. took {0:.4f} seconds".format(end_time-start_time))
-            
+        # Open the file in 'w' mode (write mode)
+        with open(output_path, 'w') as file:
+            for embedding in embeddings:
+                file.write(" ".join(map(str, embedding)) + "\n")
 
-            print("Extracting low-dimensional embeddings")
-            start_time = time.time()
-            embeddings = get_embeddings(wavelet_tree, block)
-            end_time = time.time()
-            print("done. took {0:.4f} seconds".format(end_time - start_time))
+        # Check if the end of the list has been reached
+        if block_size * (i + 1) >= len(X_pt):
+            break
 
-            # Output the embeddings to a text file
-            output_dir = "./LANL/results"
-            os.makedirs(output_dir, exist_ok=True)
+    # email(True, output_path, None)
+    # Save the updated covertree after each batch
+    print("Serializing covertree to [%s]" % covertree_path)
 
-            output_path = os.path.join(output_dir, create_filename(args.data_file) + f"_{i}.txt")
-
-            # Open the file in 'w' mode (write mode)
-            with open(output_path, 'w') as file:
-                for embedding in embeddings:
-                    file.write(" ".join(map(str, embedding)) + "\n")
-
-            # Check if the end of the list has been reached
-            if block_size * (i + 1) >= len(X_pt):
-                break
-
-        email(True, output_path, None)
-    
-    except Exception as e:
-        email(False, None, e)
+    cover_tree.save(covertree_path)
 
 if __name__ == "__main__":
     main()

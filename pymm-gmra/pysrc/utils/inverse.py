@@ -83,8 +83,12 @@ def reconstruct_X(tree, X, CelWavCoeffs):
     for leaf in get_leafs(tree.root):
         pt_idx = leaf.idxs
         x_matj = np.zeros((X.shape[1],len(pt_idx),J_max))
+        # TODO: Check Chain Generation
         chain = path(leaf)
+        # TODO: Verify Index Calculation
         for j in reversed(range(J_max)):
+            # Debugging info
+            print(f"Index j: {j}, Length of chain: {len(chain)}")
             node = chain[j]
             if node.wav_consts is not None:
                 x_tmp = node.wav_consts
