@@ -16,6 +16,18 @@ del _cd_
 # PYTHON PROJECT IMPORTS
 from mcas_gmra import CoverTree
 
+def create_pkl(data_file):
+    # Extract the base filename from the provided path
+    base_filename = os.path.basename(data_file)
+
+    # Remove the extension from the base filename
+    root, _ = os.path.splitext(base_filename)
+
+    # Create the new filename with the ".json" extension
+    pkl_filename = f"{root}.pkl"
+
+    return pkl_filename
+
 def create_json(data_file):
     # Extract the base filename from the provided path
     base_filename = os.path.basename(data_file)

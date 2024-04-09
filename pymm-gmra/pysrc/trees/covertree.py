@@ -76,27 +76,29 @@ class CoverTree(object):
     @property
     def size(self) -> int:
         return self.num_pts
+
+    def save(self, filename):
+      pk.dump(self, open(filename, 'wb'))
     
     def insert(self,
                dataset: np.ndarray) -> "CoverTree":
-        global_start = len(self.datasets)
-        print()
         if len(self.datasets) == 0:
             self.datasets.append(dataset)
+            global_start = 0
         else:
+            global_start = len(self.datasets[0])
             self.datasets[0] = np.vstack((self.datasets[0], dataset))
-            print(len(self.datasets))
-            print(self.datasets[0].shape)
 
         for pt_idx in tqdm(range(dataset.shape[0])):
             self._insert(pt_idx + global_start, len(self.datasets)-1)
-        # print("HI")
+
         return self
 
     def _insert(self,
                 pt_idx: int,
                 dataset_idx: int) -> None:
         if self.root is None:
+
             self.root = self._make_node(pt_idx, dataset_idx)
         else:
             self._insert_nonroot(pt_idx, dataset_idx)
@@ -130,7 +132,6 @@ class CoverTree(object):
         while not stop:
             Q_p_ds = self._get_children_distribution(pt, Qi_p_ds, scale)
             d_p_Q: float = self._min_ds(Q_p_ds)
-
             if d_p_Q == 0:
                 return
             # May cause an error - max_scale cal.
@@ -147,6 +148,7 @@ class CoverTree(object):
                 scale -= 1
 
         # new_node = self._make_node(pt_idx, dataset_idx)
+        
         parent.add_child(self._make_node(pt_idx, dataset_idx), p_scale)
         # parent.add_child(new_node, p_scale)
         self.min_scale = min(self.min_scale, p_scale-1)

@@ -100,6 +100,8 @@ def get_embeddings(tree, X):
         embeddings = np.multiply(basis, sigmas.reshape((basis.shape[0],1)))
     except:
         embeddings = basis
+
+    print("EMBEDDING SIZE:", embeddings.shape)
     reordered_embs = np.zeros((X.shape[0],embeddings.shape[1]))
     for idx in range(len(idxs)):
         new_idx = idxs[idx]
@@ -117,6 +119,18 @@ def create_json(data_file):
     root, _ = os.path.splitext(base_filename)
     json_filename = f"{root}.json"
     return json_filename
+
+def create_pkl(data_file):
+    # Extract the base filename from the provided path
+    base_filename = os.path.basename(data_file)
+
+    # Remove the extension from the base filename
+    root, _ = os.path.splitext(base_filename)
+
+    # Create the new filename with the ".json" extension
+    pkl_filename = f"{root}.pkl"
+
+    return pkl_filename
 
 def email(success, output_file=None, error=None):
     # Email configurations
@@ -156,9 +170,9 @@ def main() -> None:
     end_time = time.time()
     print("done. took {0:.4f} seconds".format(end_time-start_time))
 
-    max_scale = calculate_max_scale(X_pt)
+    # max_scale = calculate_max_scale(X_pt)
 
-    print(max_scale)
+    # print(max_scale)
     # block_size = calculate_block_size(max_scale)
 
     max_scale = 6
@@ -171,20 +185,15 @@ def main() -> None:
     num_blocks = math.ceil(len(X_pt) / block_size)
 
     # Load existing CoverTree or create a new one if it doesn't exist
-    filename = create_json(args.data_file)
+    filename = create_pkl(args.data_file)
     covertree_path = os.path.join(os.path.dirname(args.data_file), filename)
     
     cover_tree = CoverTree(max_scale=20)
-    # for i in range(num_blocks):
-    for i in range(5):
+    for i in range(num_blocks):
 
         block = X_pt[block_size * i: block_size * (i + 1)]
-        print("***********************************************")
-        print("STARTING BLOCK")
-        print(block.shape)
 
         cover_tree.insert(block)
-        print("***********************************************")
 
         print("constructing dyadic tree")
         start_time = time.time()
@@ -217,8 +226,8 @@ def main() -> None:
                 file.write(" ".join(map(str, embedding)) + "\n")
 
         # Check if the end of the list has been reached
-        if block_size * (i + 1) >= len(X_pt):
-            break
+        # if block_size * (i + 1) >= len(X_pt):
+        #     break
 
     # email(True, output_path, None)
     # Save the updated covertree after each batch
