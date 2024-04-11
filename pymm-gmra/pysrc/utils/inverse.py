@@ -11,9 +11,9 @@ def fgwt(wavelet_tree, X):
     print(X.shape)
     J_max = depth(wavelet_tree.root) #max scales not depth
     leafs = get_leafs(wavelet_tree.root)
-    CelWavCoeffs = [[None]*(J_max+1) for i in range(X.shape[0])] #np.zeros((X.shape[0],J_max+1)) 
-    CelScalCoeffs = [[None]*(J_max+1) for i in range(X.shape[0])] #np.zeros((X.shape[0],J_max+1))
-    CelTangCoeffs = [[None]*(J_max+1) for i in range(X.shape[0])]
+    CelWavCoeffs = [[None]*(J_max+1) for i in range(X.shape[1])] #np.zeros((X.shape[0],J_max+1)) 
+    CelScalCoeffs = [[None]*(J_max+1) for i in range(X.shape[1])] #np.zeros((X.shape[0],J_max+1))
+    CelTangCoeffs = [[None]*(J_max+1) for i in range(X.shape[1])]
     
     for leaf in leafs:
         #the index of the single point in this leaf
@@ -24,14 +24,15 @@ def fgwt(wavelet_tree, X):
         iCoarseNet = iFineNet.parent
         pt_idxs = leaf.idxs
         j = level(leaf)
-        print(j)
 
         #If this is the root
         if j==1: # Line 136
             CelWavCoeffs[curIdx][j] = leaf.wav_basis.dot(X[:, pt_idxs] - leaf.center)
             CelScalCoeffs[curIdx][j] = CelWavCoeffs[curIdx][1]
+            leaf.CelWavCoeffs[curIdx] = CelWavCoeffs[curIdx][j]
         else: # Line 142
             CelScalCoeffs[curIdx][j] = iFineNet.basis.dot(X[:,pt_idxs]- iFineNet.center)
+            
             Projections_jmax = X[:,pt_idxs]
         
             if iFineNet.wav_basis is not None: # Line 151
@@ -40,11 +41,11 @@ def fgwt(wavelet_tree, X):
                     CelScalCoeffs[curIdx][j],
                     iFineNet.basis,
                     iFineNet.wav_basis)
+                leaf.CelWavCoeffs[curIdx] = CelWavCoeffs[curIdx][j]
             CelTangCoeffs[curIdx][j] = np.zeros((iCoarseNet.basis.shape[0],len(leaf.idxs)))
 
         for node in reversed(p[:-1]): # Line 179
             j = level(node)
-            print(j)
             iFinerNet = iFineNet
             iFineNet = node
             iCoarseNet = node.parent
@@ -59,7 +60,8 @@ def fgwt(wavelet_tree, X):
                             CelScalCoeffs[curIdx][j],
                             iFineNet.basis,
                             iFineNet.wav_basis)
-            CelWavCoeffs[curIdx][1] = CelScalCoeffs[curIdx][1]
+                iFineNet.CelWavCoeffs[curIdx] = CelWavCoeffs[curIdx][j]
+            CelWavCoeffs[curIdx][1] = CelScalCoeffs[curIdx][1] # Line 236
 
     return CelWavCoeffs
 
@@ -67,7 +69,7 @@ def fgwt(wavelet_tree, X):
 
 #A Helper function for fgwt
 def ComputeWaveletCoeffcients(data_coeffs, scalBases, wavBases):
-    print(wavBases.shape, scalBases.T.shape, data_coeffs.shape)
+    # print(wavBases.shape, scalBases.T.shape, data_coeffs.shape)
     wavCoeffs = wavBases.dot((scalBases.T.dot(data_coeffs)))
 
     return wavCoeffs
@@ -82,15 +84,21 @@ def reconstruct_X(tree, X, CelWavCoeffs):
     for leaf in get_leafs(tree.root):
         pt_idx = leaf.idxs
         x_matj = np.zeros((X.shape[1],len(pt_idx),J_max))
+        # TODO: Check Chain Generation
         chain = path(leaf)
-        for j in reversed(range(J_max)):
+        # TODO: Verify Index Calculation
+        for j in reversed(range(len(chain))):
+            # Debugging info
+            # print(f"Index j: {j}, Length of chain: {len(chain)}")
             node = chain[j]
             if node.wav_consts is not None:
                 x_tmp = node.wav_consts
             else:
                 x_tmp = None
-            if node.wav_basis is not None and CelWavCoeffs[pt_idx][j] is not None:
-                x_tmp = node.wav_basis.T.dot(CelWavCoeffs[pt_idx][j]) + x_tmp
+            # if node.wav_basis is not None and CelWavCoeffs[pt_idx][j] is not None:
+            #     x_tmp = node.wav_basis.T.dot(CelWavCoeffs[pt_idx][j]) + x_tmp
+            if node.wav_basis is not None and pt_idx in node.CelWavCoeffs:
+                x_tmp = node.wav_basis.T.dot(node.CelWavCoeffs[pt_idx]) + x_tmp
             if x_tmp is not None and x_tmp.shape[1]==x_matj.shape[1]:
                 x_matj[:,:,j] = x_tmp
 

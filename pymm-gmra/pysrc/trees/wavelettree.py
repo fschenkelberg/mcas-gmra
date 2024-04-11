@@ -29,11 +29,13 @@ def mindim(sigmas: np.ndarray,
     return dim
 
 
+
+
 def rand_pca(A: np.ndarray,
              k: int,
              its: int = 2,
              l: int = None,
-             shelf=None) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+             shelf=None, inverse=False) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     U: np.ndarray = None
     s: np.ndarray = None
     V: np.ndarray = None
@@ -43,11 +45,11 @@ def rand_pca(A: np.ndarray,
 
     n, m = A.shape
     if (its*l >= m/1.25) or (its*l >= n/1.25):
-        U, s, V = np.linalg.svd(A, full_matrices=False)
+        U, s, V = np.linalg.svd(A, full_matrices=inverse)
 
         U = U[:, :k]
         s = s[:k]
-        V = V[:, 1:k]
+        V = V[:, :k] #CHANGED V = V[:, 1:k]
 
     else:
         H: np.ndarray = None
@@ -179,6 +181,8 @@ class WaveletNode(object):
         self.wav_sigmas: np.ndarray = None
         self.wav_consts: np.ndarray = None
 
+        self.CelWavCoeffs = {}
+
     def make_transform(self,
                        X: np.ndarray,
                        manifold_dim: int,
@@ -198,12 +202,12 @@ class WaveletNode(object):
                 #     continue
                 if np.prod(c.basis.shape) > 1:
                     Y: np.ndarray = c.basis-(c.basis.dot(parent_basis.T)).dot(parent_basis)
-                    _, s, V = rand_pca(Y, min(min(Y.shape), max_dim))
-
+                    _, s, V = rand_pca(Y, min(min(X.shape), max_dim), inverse = True)
                     wav_dims[i] = (s > threshold).sum(dtype=np.int8)
 
                     if wav_dims[i] > 0:
                         c.wav_basis = V[:,:int(wav_dims[i])].T
+                        # print(c.wav_basis.shape)
                         c.wav_sigmas = s[:int(wav_dims[i])]
 
                     c.wav_consts = c.center - self.center

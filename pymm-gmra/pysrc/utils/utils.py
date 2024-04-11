@@ -31,6 +31,7 @@ def get_leafs(node):
         leafs += get_leafs(child)
     return leafs
 
+
 # Given a tree structure leaf node, return a path of nodes (list) to the root
 def path(node):
     if node.parent is None:

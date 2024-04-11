@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 #Simple script for processing the output of the inverse
 
 def main():
-	projections = np.load("mnist_inverse.npy")
+	projections = np.load("mnist/results/mnist_reconstructions/mnist_inverse.npy")
 	#want to find the highest l2 norm entry
 	_, num_pts, num_scales = projections.shape
 	count = 0
@@ -15,7 +15,7 @@ def main():
 			if np.linalg.norm(embedding, 2) > .000001:
 				count +=1
 				pic = np.reshape(embedding,(28,28))
-				plt.imshow(pic)
+				plt.imshow(pic, cmap="bwr")
 				plt.show()
 	print(count)
 if __name__ == "__main__":
