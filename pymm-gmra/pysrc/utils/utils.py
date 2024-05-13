@@ -1,24 +1,8 @@
 from collections import Counter
 import numpy as np
 import torch as pt
-import pickle as pk
 
 #This file contains util helper functions that aid in traversing trees, gaining info from trees, and operations over trees
-def get_num_nodes(root):
-    children = []
-    for child_block in root.children.values():
-        children += child_block
-    if len(children) == 0:
-        return 1
-    else:
-        children_nodes = 0
-        for node in children:
-            children_nodes += get_num_nodes(node)
-        return children_nodes + 1
-
-
-def load_covertree(filename):
-    return pk.load(open(filename, 'rb'))
 
 def check_wav_vars(root):
 	if root.is_leaf:

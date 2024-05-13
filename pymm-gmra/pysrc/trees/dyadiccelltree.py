@@ -22,7 +22,7 @@ class DyadicCell(object):
         self.dataset_idx: int = dataset_idx
         self.scale: int = scale
 
-        self.idxs: np.ndarray = self.get_idxs(node, scale)
+        self.pt_idxs: np.ndarray = self.get_idxs(node, scale)
 
     def get_idxs(self,
                  node: CoverTreeNode,
@@ -94,8 +94,8 @@ class DyadicCellTree(object):
                                  scale: int) -> bool:
 
         covering_check: bool = True
-        for parent_idx in parent_cell.idxs:
-            for child_idx in child_cell.idxs:
+        for parent_idx in parent_cell.pt_idxs:
+            for child_idx in child_cell.pt_idxs:
                 covering_check = covering_check and \
                     (((self.datasets[parent_cell.dataset_idx][parent_idx] -
                        self.datasets[child_cell.dataset_idx][child_idx]) ** 2)
@@ -108,7 +108,7 @@ class DyadicCellTree(object):
         layer_cells: List[DyadicCell] = [self.root]
 
         for level in range(self.num_levels):
-            print("num pts at level %s: " % level, np.unique(np.hstack([c.idxs
+            print("num pts at level %s: " % level, np.unique(np.hstack([c.pt_idxs
                 for c in layer_cells])).shape[0])
 
             next_layer_cells: List[DyadicCell] = sum([c.children for c in layer_cells], [])

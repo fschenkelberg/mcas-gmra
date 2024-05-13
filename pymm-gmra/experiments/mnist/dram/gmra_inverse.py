@@ -25,6 +25,7 @@ from pysrc.trees.wavelettree import WaveletTree
 from pysrc.utils.utils import *
 from pysrc.utils.inverse import *
 
+
 def main() -> None:
     init_time = time.time()
 

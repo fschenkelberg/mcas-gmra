@@ -31,7 +31,7 @@ To run this code, you should follow these steps:
 
 Navigate to the directory where the code is located:
 ```bash
-cd ./scratch/f006dg0/mcas-gmra/pymm-gmra/experiments
+cd ./scratch/f006dg0/mcas-gmra/pymm-gmra/experiments.
 ```
 
 Execute the first Python script to build the cover tree and pass the provenance graph:

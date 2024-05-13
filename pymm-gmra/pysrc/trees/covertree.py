@@ -4,16 +4,15 @@ from itertools import product
 from collections import Counter
 from heapq import nsmallest
 from random import choice
-from typing import Dict, List, Set, Tuple, Union
+from typing import Dict, List, Set, Tuple
 import numpy as np
-import pickle as pk
 
-# save and load using pickle file
-
-# pickle output -- > 
 
 # PYTHON PROJECT IMPORTS
+
+
 CoverTreeNodeType = "CoverTreeNode"
+
 
 class CoverTreeNode(object):
     def __init__(self,
@@ -53,8 +52,10 @@ class CoverTreeNode(object):
 
         return self
 
+
 def unique(c) -> bool:
     return Counter(c).get(True, 0) == 1
+
 
 class CoverTree(object):
     def __init__(self,
@@ -77,28 +78,17 @@ class CoverTree(object):
     def size(self) -> int:
         return self.num_pts
 
-    def save(self, filename):
-      pk.dump(self, open(filename, 'wb'))
-    
     def insert(self,
                dataset: np.ndarray) -> "CoverTree":
-        if len(self.datasets) == 0:
-            self.datasets.append(dataset)
-            global_start = 0
-        else:
-            global_start = len(self.datasets[0])
-            self.datasets[0] = np.vstack((self.datasets[0], dataset))
-
+        self.datasets.append(dataset)
         for pt_idx in tqdm(range(dataset.shape[0])):
-            self._insert(pt_idx + global_start, len(self.datasets)-1)
-
+            self._insert(pt_idx, len(self.datasets)-1)
         return self
 
     def _insert(self,
                 pt_idx: int,
                 dataset_idx: int) -> None:
         if self.root is None:
-
             self.root = self._make_node(pt_idx, dataset_idx)
         else:
             self._insert_nonroot(pt_idx, dataset_idx)
@@ -118,11 +108,10 @@ class CoverTree(object):
     def _insert_nonroot(self,
                         pt_idx: int,
                         dataset_idx: int) -> None:
-        
         pt: np.ndarray = self.datasets[dataset_idx][pt_idx]
 
         Qi_p_ds: List[Tuple[CoverTreeNode, float]] = [(self.root,
-                                                    self._dist_func(pt,
+                                                       self._dist_func(pt,
                                                         self._load_pt(self.root)),)]
         scale: int = self.max_scale
         p_scale: float = None
@@ -132,9 +121,9 @@ class CoverTree(object):
         while not stop:
             Q_p_ds = self._get_children_distribution(pt, Qi_p_ds, scale)
             d_p_Q: float = self._min_ds(Q_p_ds)
+
             if d_p_Q == 0:
                 return
-            # May cause an error - max_scale cal.
             elif d_p_Q > self.base**scale:
                 stop = True
             else:
@@ -144,56 +133,12 @@ class CoverTree(object):
                     p_scale = scale
 
                 Qi_p_ds: List[Tuple[CoverTreeNode, float]] = [(q,d) for q,d in Q_p_ds
-                                                            if d <= self.base**scale]
+                                                              if d <= self.base**scale]
                 scale -= 1
 
-        # new_node = self._make_node(pt_idx, dataset_idx)
-        
         parent.add_child(self._make_node(pt_idx, dataset_idx), p_scale)
-        # parent.add_child(new_node, p_scale)
         self.min_scale = min(self.min_scale, p_scale-1)
 
-        # Rebalance the tree
-        # self._balance_tree(new_node)
-
-    """
-    def _balance_tree(self, node: CoverTreeNode) -> None:
-        if node is None:
-            return
-        
-        for scale, children in node.children.items():
-            if len(children) > 1:
-                # The balancing operation
-                self._redistribute_children(node, scale)
-
-        # Recursively balance the parent nodes
-        self._balance_tree(node.parent)
-
-    def _redistribute_children(self, node: CoverTreeNode, scale: int) -> None:
-        children = node.children[scale]
-        # Evenly distribute children
-        num_children = len(children)
-        num_new_children = num_children // 2
-        left_children = children[:num_new_children]
-        right_children = children[num_new_children:]
-
-        # Remove existing children at this scale
-        del node.children[scale]
-
-        # Create new parent nodes for the redistributed children
-        left_parent = CoverTreeNode()
-        right_parent = CoverTreeNode()
-
-        # Add children to their respective new parent nodes
-        for child in left_children:
-            left_parent.add_child(child, scale)
-        for child in right_children:
-            right_parent.add_child(child, scale)
-
-        # Connect the new parent nodes to the original node
-        node.add_child(left_parent, scale)
-        node.add_child(right_parent, scale)
-    """
     def _dist_func(self,
                    pt1: np.ndarray,
                    pt2: np.ndarray) -> float:
@@ -241,3 +186,4 @@ class CoverTree(object):
                 raise ValueError("ERROR at scale %s, separation fails" % scale)
 
             C = C_next
+

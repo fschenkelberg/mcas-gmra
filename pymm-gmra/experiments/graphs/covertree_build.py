@@ -16,18 +16,6 @@ del _cd_
 # PYTHON PROJECT IMPORTS
 from mcas_gmra import CoverTree
 
-def create_pkl(data_file):
-    # Extract the base filename from the provided path
-    base_filename = os.path.basename(data_file)
-
-    # Remove the extension from the base filename
-    root, _ = os.path.splitext(base_filename)
-
-    # Create the new filename with the ".json" extension
-    pkl_filename = f"{root}.pkl"
-
-    return pkl_filename
-
 def create_json(data_file):
     # Extract the base filename from the provided path
     base_filename = os.path.basename(data_file)
@@ -57,7 +45,7 @@ def read_data(file_path):
             data_list.append(float_values)
 
     # Added to filter out any values that are not of the same length [Expected: 256]
-    data_list = [data for data in data_list if len(data) == 128]
+    data_list = [data for data in data_list if len(data) == 256]
     # Convert the list of lists to a PyTorch tensor
     tensor_data = pt.tensor(data_list)
 
@@ -71,8 +59,6 @@ def main() -> None:
                         help="if enabled, perform an expensive tree validate operation")
     parser.add_argument("--data_file", type=str, 
                         help="path to the data file")
-    parser.add_argument("--max_scale", type=int, 
-                        help="calculated max_scale for the given data file")
     args = parser.parse_args()
 
     if not os.path.exists(args.data_dir):
@@ -82,7 +68,7 @@ def main() -> None:
     X_pt = read_data(args.data_file)
     print("done")
 
-    cover_tree = CoverTree(max_scale=args.max_scale)
+    cover_tree = CoverTree(max_scale=8)
 
     for pt_idx in tqdm(list(range(X_pt.shape[0])),
                        desc="building covertree"):

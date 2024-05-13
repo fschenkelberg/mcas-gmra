@@ -118,7 +118,7 @@ def node_function(X: np.ndarray,
                   threshold: float = 0.5,
                   precision: float = 1e-2) -> Tuple[np.ndarray, int, float,
                                                  np.ndarray, np.ndarray]:
-    mu: np.ndarray = np.mean(X, axis=0, keepdims=True)
+    mu: np.ndarray = np.mean(X, axis=1, keepdims=True)
 
     X_mean_centered: np.ndarray = X - mu
     radius: float = np.sqrt(np.max((X_mean_centered**2).sum(axis=-1)))
@@ -146,7 +146,8 @@ def node_function(X: np.ndarray,
             V = np.hstack([V, np.zeros((V.shape[0], manifold_dim - size))])
         basis = V[:, :min(manifold_dim, int(np.sum(sigmas > 0)))]
 
-    return mu, X.shape[0], radius, basis, sigmas
+
+    return mu, X.shape[0], radius, basis.T, sigmas
 
 
 class WaveletNode(object):
@@ -165,7 +166,7 @@ class WaveletNode(object):
         self.parent: WaveletNodeType = None
 
         self.center, self.size, self.radius, self.basis, self.sigmas = node_function(
-            np.atleast_2d(X[idxs,:]),
+            np.atleast_2d(X[idxs,:].T),
             manifold_dim,
             max_dim,
             is_leaf,
@@ -187,22 +188,28 @@ class WaveletNode(object):
                        precision: float = 1e-2) -> None:
         parent_basis: np.ndarray = self.basis
 
-        print(self.idxs.shape, self.basis.shape)
-        if np.prod(parent_basis.shape) > 0:
+        # print(self.idxs.shape, self.basis.shape)
+
+        if np.prod(parent_basis.shape) > 1:
             wav_dims: np.ndarray = np.zeros(len(self.children))
-            for i,c in enumerate(self.children):
-                if np.prod(c.basis.shape) > 0:
+            for i, c in enumerate(self.children):
+                #If the child is a leaf node, there is no need to populate its wav vars, it doesnt have a wavelet
+                # if len(c.idxs) ==1 or c.basis.shape[0] == 1:
+                #     continue
+                if np.prod(c.basis.shape) > 1:
                     Y: np.ndarray = c.basis-(c.basis.dot(parent_basis.T)).dot(parent_basis)
                     _, s, V = rand_pca(Y, min(min(Y.shape), max_dim))
 
-                    wav_dims[i] = (s > threshold).sum()
-                    if wav_dims[i] > 0:
-                        self.wav_basis = V[:,:wav_dims[i]].T
-                        self.wav_sigmas = s[:wav_dims[i]]
+                    wav_dims[i] = (s > threshold).sum(dtype=np.int8)
 
-                    self.wav_consts = c.center - self.center
-                    self.wav_consts = self.wav_consts -\
-                        parent_basis.T.dot(parent_basis*self.wav_consts)
+                    if wav_dims[i] > 0:
+                        c.wav_basis = V[:,:int(wav_dims[i])].T
+                        c.wav_sigmas = s[:int(wav_dims[i])]
+
+                    c.wav_consts = c.center - self.center
+    
+
+                    c.wav_consts = c.wav_consts - parent_basis.T.dot(parent_basis.dot(c.wav_consts))
 
 
 class WaveletTree(object):
@@ -279,7 +286,7 @@ class WaveletTree(object):
         for level in range(1, self.num_levels):
             next_layer = list()
             for node in current_layer:
-                print("level %s: basis.shape: %s" % (level, node.basis.shape))
+                # print("level %s: basis.shape: %s" % (level, node.basis.shape))
                 for child in node.children:
                     next_layer.append(child)
 
@@ -289,7 +296,7 @@ class WaveletTree(object):
         for j in range(self.num_levels-1, 0, -1):
             # built transforms
             nodes = nodes_at_layers[j]
-            print("layer %s" % j)
+            # print("layer %s" % j)
             for node in nodes:
-                node.make_transform(X, self.manifold_dims[j], self.max_dim,
+                node.make_transform(X.T, self.manifold_dims[j], self.max_dim,
                                     self.shelf, self.thresholds[j], self.precisions[j])

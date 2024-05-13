@@ -59,8 +59,6 @@ def main() -> None:
                         help="if enabled, perform an expensive tree validate operation")
     parser.add_argument("--data_file", type=str, 
                         help="path to the data file")
-    parser.add_argument("--max_scale", type=int, 
-                        help="max_scale for the data file")
     args = parser.parse_args()
 
     if not os.path.exists(args.data_dir):
@@ -70,7 +68,7 @@ def main() -> None:
     X_pt = read_data(args.data_file)
     print("done")
 
-    cover_tree = CoverTree(max_scale=args.max_scale)
+    cover_tree = CoverTree(max_scale=8)
 
     for pt_idx in tqdm(list(range(X_pt.shape[0])),
                        desc="building covertree"):
