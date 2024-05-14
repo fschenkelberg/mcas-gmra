@@ -67,7 +67,7 @@ def main() -> None:
     print("took script {0:.4f} seconds to run".format(end_time-init_time))
 
     projections = invert(wavelet_tree, X)
-    np.save('mnist_inverse.npy', projections)
+    np.save('mnist/results/mnist_inverse.npy', projections)
 
 if __name__ == "__main__":
     main()
