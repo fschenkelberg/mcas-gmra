@@ -6,7 +6,7 @@ from heapq import nsmallest
 from random import choice
 from typing import Dict, List, Set, Tuple
 import numpy as np
-
+import pickle as pk
 
 # PYTHON PROJECT IMPORTS
 
@@ -187,3 +187,5 @@ class CoverTree(object):
 
             C = C_next
 
+    def save(self, fname):
+      pk.dump(self, open(fname, "wb"))

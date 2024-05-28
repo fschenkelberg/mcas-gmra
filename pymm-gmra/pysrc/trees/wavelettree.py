@@ -33,7 +33,7 @@ def rand_pca(A: np.ndarray,
              k: int,
              its: int = 2,
              l: int = None,
-             shelf=None) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+             shelf=None, inverse=False) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     U: np.ndarray = None
     s: np.ndarray = None
     V: np.ndarray = None
@@ -43,11 +43,11 @@ def rand_pca(A: np.ndarray,
 
     n, m = A.shape
     if (its*l >= m/1.25) or (its*l >= n/1.25):
-        U, s, V = np.linalg.svd(A, full_matrices=False)
+        U, s, V = np.linalg.svd(A, full_matrices=inverse)
 
         U = U[:, :k]
         s = s[:k]
-        V = V[:, 1:k]
+        V = V[:, :k] #CHANGED V = V[:, 1:k]
 
     else:
         H: np.ndarray = None
@@ -116,9 +116,13 @@ def node_function(X: np.ndarray,
                   errortype: str = "relative",
                   shelf=None,
                   threshold: float = 0.5,
-                  precision: float = 1e-2) -> Tuple[np.ndarray, int, float,
+                  precision: float = 1e-2, inverse = False) -> Tuple[np.ndarray, int, float,
                                                  np.ndarray, np.ndarray]:
-    mu: np.ndarray = np.mean(X, axis=1, keepdims=True)
+    if inverse:
+        X = X.T
+        mu: np.ndarray = np.mean(X, axis=1, keepdims=True)
+    else:
+        mu: np.ndarray = np.mean(X, axis=0, keepdims=True)
 
     X_mean_centered: np.ndarray = X - mu
     radius: float = np.sqrt(np.max((X_mean_centered**2).sum(axis=-1)))
@@ -146,8 +150,10 @@ def node_function(X: np.ndarray,
             V = np.hstack([V, np.zeros((V.shape[0], manifold_dim - size))])
         basis = V[:, :min(manifold_dim, int(np.sum(sigmas > 0)))]
 
-
-    return mu, X.shape[0], radius, basis.T, sigmas
+    if inverse:
+        return mu, X.shape[0], radius, basis.T, sigmas
+    else:
+        return mu, X.shape[0], radius, basis, sigmas
 
 
 class WaveletNode(object):
@@ -159,25 +165,28 @@ class WaveletNode(object):
                  is_leaf: bool,
                  shelf = None,
                  threshold: float = 0.5,
-                 precision: float = 1e-2) -> None:
+                 precision: float = 1e-2, inverse = False) -> None:
         self.idxs: np.ndarray = idxs
         self.is_leaf: bool = is_leaf
         self.children: List[WaveletNodeType] = list()
         self.parent: WaveletNodeType = None
 
         self.center, self.size, self.radius, self.basis, self.sigmas = node_function(
-            np.atleast_2d(X[idxs,:].T),
+            np.atleast_2d(X[idxs,:]),
             manifold_dim,
             max_dim,
             is_leaf,
             shelf=shelf,
             threshold=threshold,
-            precision=precision
+            precision=precision, 
+            inverse=inverse
         )
 
         self.wav_basis: np.ndarray = None
         self.wav_sigmas: np.ndarray = None
         self.wav_consts: np.ndarray = None
+
+        self.CelWavCoeffs = {}
 
     def make_transform(self,
                        X: np.ndarray,
@@ -198,12 +207,12 @@ class WaveletNode(object):
                 #     continue
                 if np.prod(c.basis.shape) > 1:
                     Y: np.ndarray = c.basis-(c.basis.dot(parent_basis.T)).dot(parent_basis)
-                    _, s, V = rand_pca(Y, min(min(Y.shape), max_dim))
-
+                    _, s, V = rand_pca(Y, min(min(X.shape), max_dim), inverse = True)
                     wav_dims[i] = (s > threshold).sum(dtype=np.int8)
 
                     if wav_dims[i] > 0:
                         c.wav_basis = V[:,:int(wav_dims[i])].T
+                        # print(c.wav_basis.shape)
                         c.wav_sigmas = s[:int(wav_dims[i])]
 
                     c.wav_consts = c.center - self.center
@@ -220,7 +229,8 @@ class WaveletTree(object):
                  max_dim: int,
                  shelf = None,
                  thresholds: Union[float, np.ndarray] = 0.5,
-                 precisions: Union[float, np.ndarray] = 1e-2) -> None:
+                 precisions: Union[float, np.ndarray] = 1e-2,
+                 inverse = False) -> None:
 
         if not isinstance(manifold_dims, np.ndarray):
             self.manifold_dims = np.ones(dyadic_tree.num_levels, dtype=int)*\
@@ -235,6 +245,7 @@ class WaveletTree(object):
         self.num_levels: int = dyadic_tree.num_levels
         self.root: WaveletNode = None
         self.num_nodes: int = 0
+        self.inverse = inverse
 
         self.make_basis(dyadic_tree, X)
 
@@ -249,7 +260,8 @@ class WaveletTree(object):
                                 len(cell_root.children) == 0,
                                 shelf=self.shelf,
                                 threshold=self.thresholds[0],
-                                precision=self.precisions[0])
+                                precision=self.precisions[0],
+                                inverse = self.inverse)
         self.num_nodes += 1
 
         current_cells = [cell_root]
@@ -268,7 +280,8 @@ class WaveletTree(object):
                                            len(child_cell.children) == 0,
                                            shelf=self.shelf,
                                            threshold=self.thresholds[level],
-                                           precision=self.precisions[level])
+                                           precision=self.precisions[level], 
+                                           inverse = self.inverse)
 
                     next_cells.append(child_cell)
                     next_nodes.append(new_node)

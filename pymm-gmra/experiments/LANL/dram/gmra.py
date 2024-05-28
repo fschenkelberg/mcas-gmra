@@ -9,15 +9,16 @@ import sys
 import torch as pt
 import time
 
-_cd_: str = os.path.abspath(os.path.dirname(__file__))
+_cd_ = os.path.abspath(os.path.dirname(__file__))
 for _dir_ in [_cd_, os.path.abspath(os.path.join(_cd_, "..", "..", ".."))]:
     if _dir_ not in sys.path:
         sys.path.append(_dir_)
-del _cd_
 print(sys.path)
 
 # PYTHON PROJECT IMPORTS
 from mcas_gmra import CoverTree, DyadicTree
+# from pysrc.trees.covertree import CoverTree
+# from pysrc.trees.dyadiccelltree import DyadicCellTree as DyadicTree
 from pysrc.trees.wavelettree import WaveletTree
 
 # The low-dimensional features for each point at an arbitrary scale (i.e. 0) are stored inside the wavelet nodes themselves. 
@@ -56,7 +57,7 @@ def read_data(file_path):
             data_list.append(float_values)
 
     # Convert the list of lists to a PyTorch tensor
-    tensor_data = torch.tensor(data_list)
+    tensor_data = pt.tensor(data_list)
 
     return tensor_data
 
@@ -71,22 +72,22 @@ def best_depth(node):
         nodes = get_nodes_at_depth(node, depth_counter)
 
         #check if this set is "good" - all nodes have the same dimension
-        dims = {x.basis.shape[1] for x in nodes}
+        dims = list({node.basis.shape[1] for node in nodes})
 
         num_dims = len(dims)
 
-        dim = dims.pop()
+        # dim = dims.pop()
 
         #if num_dims is 1, then all nodes have the same dimension (good). need to make sure its not 0
-        if num_dims == 1 and not dim == 0:
+        if num_dims == 1 and not dims[0] == 0:
             best_nodes = nodes
-            best_dim = dim
+            best_dim = dims[0]
         else:
             #if this is a bad depth, the previous depth was BEST. return those nodes
             return best_nodes, best_dim
         depth_counter += 1
 
-def get_embeddings(tree):
+def get_embeddings(tree, X):
     #returns the embeddings matrix and the idxs map
     nodes, dim = best_depth(tree.root)
 
@@ -100,7 +101,10 @@ def get_embeddings(tree):
     #expect: basis nxd where n is 1000 (num nodes) and d is the best dim
     #idxs is a column vector of length 1000 (node idxs corresponding to the elements in the basis)
     #sigmas is a column vector of length 1000 (scaling factors for each basis vector)
-    embeddings = np.multiply(basis, sigmas.reshape((basis.shape[0],1)))
+    try:
+        embeddings = np.multiply(basis, sigmas.reshape((basis.shape[0],1)))
+    except:
+        embeddings = basis
 
     #we need to reorder embeddings based on sigmas
     reordered_embs = np.zeros(embeddings.shape)
@@ -119,8 +123,9 @@ def main() -> None:
 
     print("loading data")
     start_time = time.time()
-    # Generate the helix dataset using the helix function
-    X = read_data("/scratch/f006dg0/end/pymm-gmra/experiments/LANL/dataset/auth_10mil_4_256.txt")
+
+    X = np.loadtxt("LANL/dataset/auth_10mil_4_256.txt", skiprows=1, usecols=tuple(range(1,257)))
+    X = pt.from_numpy(X.astype(np.float32))
     # X = pt.from_numpy(X.astype(np.float32))
     # Print the 3D points
     end_time = time.time()
@@ -130,10 +135,17 @@ def main() -> None:
         raise ValueError("ERROR: covertree json file does not exist at [%s]"
                          % args.covertree_path)
 
-    print("loading covertree from [%s]" % args.covertree_path)
+    
     start_time = time.time()
-    cover_tree: CoverTree = CoverTree(args.covertree_path)
-    end_time = time.time()
+    cover_tree = CoverTree(args.covertree_path)
+    # try:
+    #     pk.load("LANL/dataset/auth_10mil_4_256.pkl")
+    #     print("loaded covertree from [%s]" % args.covertree_path)
+    # except:
+    #     cover_tree = CoverTree(max_scale=6)
+    #     cover_tree.insert(X)
+    #     cover_tree.save("LANL/dataset/auth_10mil_4_256.pkl")
+    # end_time = time.time()
     print("done. took {0:.4f} seconds".format(end_time-start_time))
 
     print("constructing dyadic tree")
@@ -154,12 +166,12 @@ def main() -> None:
 
     print("Extracting low-dimensional embeddings at scale {0}".format(desired_scale))
     start_time = time.time()
-    embeddings = get_embeddings(wavelet_tree)
+    embeddings = get_embeddings(wavelet_tree, X)
     end_time = time.time()
     print("done. took {0:.4f} seconds".format(end_time - start_time))
 
     # Output the embeddings to a text file
-    output_dir = "./helix/results"
+    output_dir = "./LANL/results"
     output_path = os.path.join(output_dir, "dram.txt")
 
     # Create the directory if it doesn't exist

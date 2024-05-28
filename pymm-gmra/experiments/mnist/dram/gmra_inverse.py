@@ -12,6 +12,9 @@ import matplotlib.pyplot as plt
 import math
 from collections import Counter
 from tensorflow.keras.datasets import mnist
+import pickle as pk
+
+#python mnist\dram\gmra_inverse.py mnist\results\mnist_covertree.json --wavelettree_path mnist\results\wavelettree_mnist.pkl
 
 _cd_: str = os.path.abspath(os.path.dirname(__file__))
 for _dir_ in [_cd_, os.path.abspath(os.path.join(_cd_, "..", "..", ".."))]:
@@ -32,7 +35,9 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("covertree_path", type=str,
                         help="path to serialized json file")
+    parser.add_argument("--wavelettree_path", type=str, default=None, required=False, help="path to pk file for the wavelet tree (optional)")
     args = parser.parse_args()
+
 
     print("loading data")
     start_time = time.time()
@@ -42,32 +47,59 @@ def main() -> None:
     end_time = time.time()
     print("done. took {0:.4f} seconds".format(end_time-start_time))
 
-    if not os.path.exists(args.covertree_path):
-        raise ValueError("ERROR: covertree json file does not exist at [%s]"
-                         % args.covertree_path)
+    if args.wavelettree_path is not None:
+        print(f"loading wavelet tree from {args.wavelettree_path}")
+        start_time = time.time()
+        wavelet_tree = pk.load(open(args.wavelettree_path, 'rb'))
+        end_time = time.time()
+        print("done. took {0:.4f} seconds".format(end_time-start_time))
+    else:
+        if not os.path.exists(args.covertree_path):
+            raise ValueError("ERROR: covertree json file does not exist at [%s]"
+                             % args.covertree_path)
+        print("loading covertree from [%s]" % args.covertree_path)
+        start_time = time.time()
+        cover_tree: CoverTree = CoverTree(args.covertree_path)
+        end_time = time.time()
+        print("done. took {0:.4f} seconds".format(end_time-start_time))
 
+        print("constructing dyadic tree")
+        start_time = time.time()
+        dyadic_tree = DyadicTree(cover_tree)
+        end_time = time.time()
+        print("done. took {0:.4f} seconds".format(end_time-start_time))
 
-    print("loading covertree from [%s]" % args.covertree_path)
+        print("constructing wavelet tree")
+        start_time = time.time()
+        wavelet_tree = WaveletTree(dyadic_tree, X, 0, X.shape[-1], inverse=True)
+        end_time = time.time()
+        print("done. took {0:.4f} seconds".format(end_time-start_time))
+        print("took script {0:.4f} seconds to run".format(end_time-init_time))
+
+        pk.dump(wavelet_tree, open("mnist/results/wavelettree_mnist.pkl", 'wb'))
+        print("Saved wavelet tree to pickle file")
+
+    print("Reconstructing X")
     start_time = time.time()
-    cover_tree: CoverTree = CoverTree(args.covertree_path)
-    end_time = time.time()
-    print("done. took {0:.4f} seconds".format(end_time-start_time))
-
-    print("constructing dyadic tree")
-    start_time = time.time()
-    dyadic_tree = DyadicTree(cover_tree)
-    end_time = time.time()
-    print("done. took {0:.4f} seconds".format(end_time-start_time))
-
-    print("constructing wavelet tree")
-    start_time = time.time()
-    wavelet_tree = WaveletTree(dyadic_tree, X, 0, X.shape[-1])
-    end_time = time.time()
-    print("done. took {0:.4f} seconds".format(end_time-start_time))
-    print("took script {0:.4f} seconds to run".format(end_time-init_time))
-
     projections = invert(wavelet_tree, X)
-    np.save('mnist/results/mnist_inverse.npy', projections)
+    end_time = time.time()
+    print("done. took {0:.4f} seconds".format(end_time-start_time))
+    # np.save('mnist/results/mnist_inverse.npy', projections)
+
+    _, num_pts, num_scales = projections.shape
+    count = 0
+    #count of well reconstructed pts
+    for pt in range(num_pts):
+        for scale in range(num_scales):
+            embedding = projections[:,pt, scale]
+            #check its L2 norm
+            if np.linalg.norm(embedding, 2) > .000001:
+                count +=1
+                pic = np.reshape(embedding,(28,28))
+                plt.imshow(pic)
+                plt.show()
+    print(count)
+    print("Finished saving results")
 
 if __name__ == "__main__":
     main()
